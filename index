@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Violence Investigation Agent</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --page:#f4f6f9;--white:#fff;--surface:#f9fafb;
+  --border:#e2e6ea;--border2:#cbd2da;
+  --blue:#2563eb;--blue-lt:#eff4ff;--blue-mid:#dbeafe;
+  --purple:#6d28d9;--purple-lt:#f4f0ff;--purple-mid:#ede9fe;
+  --red:#dc2626;--red-lt:#fef2f2;--red-mid:#fecaca;
+  --amber:#b45309;--amber-lt:#fffbeb;--amber-mid:#fde68a;
+  --green:#15803d;--green-lt:#f0fdf4;--green-mid:#bbf7d0;
+  --text:#1a1f2e;--muted:#64748b;--subtle:#94a3b8;
+  --r:8px;--rl:11px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--page);color:var(--text);min-height:100vh;font-size:13px;line-height:1.5}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#cbd2da;border-radius:10px}
+/* header */
+.hdr{height:52px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:300}
+.hdr-icon{width:28px;height:28px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0}
+.hdr-name{font-size:13px;font-weight:700}.hdr-sub{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.hdr-sep{width:1px;height:22px;background:var(--border)}
+.hdr-ctx{flex:1;min-width:0}
+.hdr-ctx-title{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-ctx-sub{font-size:10px;color:var(--muted)}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.save-chip{font-size:10px;color:var(--green);background:var(--green-lt);border:1px solid var(--green-mid);border-radius:20px;padding:3px 9px;transition:.3s}
+.save-chip.saving{color:var(--amber);background:var(--amber-lt);border-color:var(--amber-mid)}
+.user-pill{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:4px 10px}
+.av{width:22px;height:22px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0}
+/* views */
+.view{display:none}.view.show{display:block}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;transition:.15s;white-space:nowrap;font-family:inherit;background:var(--white);color:var(--muted)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-primary:hover{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--muted)}.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-success{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn-danger-o{background:transparent;border-color:var(--red-mid);color:var(--red)}.btn-danger-o:hover{background:var(--red-lt)}
+.btn-warn{background:#d97706;color:#fff;border-color:#d97706}
+.btn-ai{background:var(--purple);color:#fff;border-color:var(--purple)}.btn-ai:hover{background:#5b21b6;color:#fff}
+.btn-sm{padding:5px 11px;font-size:11px}.btn-xs{padding:3px 8px;font-size:10px;border-radius:5px}
+/* badges/tags */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;border:1px solid}
+.b-red{background:var(--red-lt);color:var(--red);border-color:var(--red-mid)}
+.b-amber{background:var(--amber-lt);color:var(--amber);border-color:var(--amber-mid)}
+.b-green{background:var(--green-lt);color:var(--green);border-color:var(--green-mid)}
+.b-blue{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-mid)}
+.b-gray{background:var(--surface);color:var(--muted);border-color:var(--border)}
+.tag{display:inline-flex;align-items:center;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;border:1px solid}
+.t-src{background:var(--green-lt);color:var(--green);border-color:var(--green-mid)}
+.t-ai{background:var(--purple-lt);color:var(--purple);border-color:var(--purple-mid)}
+.t-mgr{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-mid)}
+.t-req{background:var(--red-lt);color:var(--red);border-color:var(--red-mid);font-size:8px}
+.t-opt{background:var(--surface);color:var(--subtle);border-color:var(--border);font-size:8px}
+/* alerts */
+.alert{display:flex;align-items:flex-start;gap:10px;border-radius:var(--r);padding:10px 13px;margin-bottom:12px;font-size:12px;line-height:1.5;border:1px solid}
+.al-red{background:var(--red-lt);border-color:var(--red-mid);color:#7f1d1d}
+.al-amber{background:var(--amber-lt);border-color:var(--amber-mid);color:#78350f}
+.al-blue{background:var(--blue-lt);border-color:var(--blue-mid);color:#1e3a8a}
+.al-green{background:var(--green-lt);border-color:var(--green-mid);color:#14532d}
+.al-purple{background:var(--purple-lt);border-color:var(--purple-mid);color:#4c1d95}
+.al-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.al-dismiss{margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
+/* cards */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:14px}
+.card-sm{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.sec-title{font-size:13px;font-weight:700}
+.sec-desc{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+/* form */
+.field{margin-bottom:12px}
+.field-label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600}
+.field input,.field textarea,.field select{width:100%;background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:7px 10px;font-size:12px;font-family:inherit;transition:.15s}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.field textarea{resize:vertical;min-height:68px;line-height:1.6}
+.field.mgr input,.field.mgr textarea,.field.mgr select{border-left:3px solid var(--blue)}
+.field.ai-field textarea{border-left:3px solid var(--purple)}
+.ro{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--text);line-height:1.6;min-height:32px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* checklist */
+.chk{display:flex;align-items:flex-start;gap:9px;padding:8px 11px;background:var(--white);border-radius:var(--r);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:.15s}
+.chk:hover{border-color:var(--border2)}.chk.ck{border-color:var(--green-mid);background:var(--green-lt)}
+.chk input[type=checkbox]{accent-color:var(--green);width:14px;height:14px;margin-top:1px;flex-shrink:0;cursor:pointer}
+.chk-lbl{font-size:12px;flex:1;line-height:1.5}.chk-lbl small{display:block;font-size:10px;color:var(--muted);margin-top:1px}
+/* ai */
+.ai-box{background:var(--purple-lt);border:1px solid var(--purple-mid);border-radius:var(--rl);padding:14px;margin-top:10px}
+.ai-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--purple)}
+.ai-box textarea{width:100%;background:var(--white);border:1px solid var(--purple-mid);border-radius:var(--r);padding:10px;color:var(--text);font-size:11px;line-height:1.75;font-family:'Courier New',monospace;min-height:180px;resize:vertical}
+.ai-cta{display:flex;align-items:center;gap:12px;background:var(--purple-lt);border:1px solid var(--purple-mid);border-radius:var(--rl);padding:13px 15px;margin-bottom:14px}
+.ai-cta-title{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:2px}
+.ai-cta-sub{font-size:11px;color:var(--muted)}
+.loading{display:flex;align-items:center;gap:9px;color:var(--purple);font-size:12px;padding:12px 0}
+.spinner{width:15px;height:15px;border:2px solid var(--purple-mid);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.legend-bar{display:flex;align-items:center;gap:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;margin-bottom:14px;font-size:10px;color:var(--muted);flex-wrap:wrap}
+.lg-item{display:flex;align-items:center;gap:5px}
+.lg-line{width:12px;height:3px;border-radius:2px}
+/* upload */
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--rl);padding:22px;text-align:center;cursor:pointer;transition:.2s;background:var(--surface)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-lt)}
+.upload-zone.done{border-color:var(--green);border-style:solid;background:var(--green-lt)}
+/* training table */
+.tt{width:100%;border-collapse:collapse;font-size:12px}
+.tt th{text-align:left;padding:7px 10px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+.tt td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tt tr:last-child td{border-bottom:none}
+/* sequence */
+.seq-item{display:flex;gap:10px;margin-bottom:8px}
+.seq-time{width:68px;flex-shrink:0}
+.seq-time input{width:100%;background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:6px 7px;font-size:11px;text-align:center;font-family:inherit}
+.seq-dot{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.seq-circle{width:9px;height:9px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:10px}
+.seq-line{width:2px;flex:1;background:var(--border);margin:3px auto}
+.seq-body textarea{width:100%;background:var(--white);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:var(--r);color:var(--text);padding:7px 10px;font-size:12px;font-family:inherit;min-height:46px;resize:vertical;line-height:1.5}
+/* env checklist with yes/no/na */
+.env-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.env-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);transition:.15s}
+.env-row:hover{border-color:var(--border2)}
+.env-text{flex:1;min-width:0}
+.env-label{font-size:12px;color:var(--text);line-height:1.4}
+.env-hint{font-size:10px;color:var(--muted);margin-top:2px}
+.env-choices{display:flex;gap:4px;flex-shrink:0}
+.env-btn{padding:5px 12px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--white);color:var(--muted);cursor:pointer;border-radius:var(--r);font-family:inherit;min-width:50px;transition:.12s}
+.env-btn:hover{border-color:var(--border2);color:var(--text)}
+.env-btn.env-sel-yes{background:var(--green-lt);border-color:var(--green);color:var(--green)}
+.env-btn.env-sel-no{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+.env-btn.env-sel-na{background:#e0e7ef;border-color:#94a3b8;color:#475569}
+
+/* contributing factors */
+.cf-list{display:flex;flex-direction:column;gap:14px}
+.cf-group{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.cf-group-hdr{background:var(--surface);padding:8px 14px;font-size:11px;font-weight:700;color:var(--text);letter-spacing:.3px;border-bottom:1px solid var(--border)}
+.cf-items{padding:6px 8px;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+@media(max-width:760px){.cf-items{grid-template-columns:1fr}}
+.cf-check{display:flex;align-items:flex-start;gap:9px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;line-height:1.45;color:var(--text);transition:.12s}
+.cf-check:hover{background:var(--surface)}
+.cf-check.cf-checked{background:var(--blue-lt)}
+.cf-check input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px;margin-top:2px;flex-shrink:0;cursor:pointer}
+.cf-check span{flex:1}
+.cf-ai-mark{display:inline-block;font-size:9px;color:var(--purple);background:var(--purple-lt);border:1px solid var(--purple-mid);padding:1px 5px;border-radius:4px;font-weight:700;margin-left:4px;vertical-align:middle}
+.cf-item{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:8px}
+.cf-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.cf-name{font-size:12px;font-weight:600;flex:1}
+.cf-sel{background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:4px 8px;font-size:11px;cursor:pointer}
+.cf-ai{font-size:11px;line-height:1.7;color:#4c1d95;background:var(--purple-lt);border:1px solid var(--purple-mid);border-left:3px solid var(--purple);border-radius:var(--r);padding:8px 10px;margin-bottom:8px}
+.cf-mgr{width:100%;background:var(--white);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--r);color:var(--text);padding:7px 10px;font-size:11px;font-family:inherit;min-height:44px;resize:vertical;line-height:1.5}
+/* corrective actions - simplified two-column */
+.ca-card-simple{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:10px;position:relative;display:flex;gap:12px;transition:.15s}
+.ca-card-simple:hover{border-color:var(--border2)}
+.ca-num-circle{width:26px;height:26px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px}
+.ca-content{flex:1;display:grid;grid-template-columns:1.6fr 1fr;gap:14px;min-width:0}
+.ca-action-side{display:flex;flex-direction:column;min-width:0}
+.ca-reason-side{display:flex;flex-direction:column;min-width:0;padding-left:14px;border-left:1px dashed var(--border)}
+.ca-side-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:8px;flex-wrap:wrap}
+.ca-side-label{font-size:10px;font-weight:700;color:var(--text);letter-spacing:.4px;text-transform:uppercase}
+.ca-reason-label{color:var(--muted)}
+.ca-copy-hint{font-size:9px;color:var(--blue);font-weight:600}
+.ca-ref-tag{font-size:9px;color:var(--subtle);font-style:italic}
+.ca-details{width:100%;background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:9px 11px;font-size:12px;line-height:1.6;font-family:inherit;resize:vertical;transition:.15s;min-height:80px}
+.ca-details:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.ca-copy-btn{margin-top:7px;align-self:flex-start}
+.ca-reason-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;font-size:11px;line-height:1.6;color:var(--muted);min-height:80px;flex:1}
+.ca-source-note{font-size:9px;color:var(--subtle);margin-top:6px;font-weight:600}
+.ca-del-btn{position:absolute;top:10px;right:10px;background:transparent;border:none;color:var(--subtle);cursor:pointer;font-size:18px;padding:2px 8px;border-radius:4px;line-height:1;transition:.12s}
+.ca-del-btn:hover{color:var(--red);background:var(--red-lt)}
+
+@media(max-width:760px){
+  .ca-content{grid-template-columns:1fr;gap:10px}
+  .ca-reason-side{padding-left:0;border-left:none;border-top:1px dashed var(--border);padding-top:10px}
+}
+
+/* corrective actions - legacy */
+.ca-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:8px;position:relative}
+.ca-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.ca-num{width:22px;height:22px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;margin-top:3px}
+.ca-source{font-size:9px;color:var(--purple);font-weight:700;margin-bottom:4px}
+.ca-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.ca-meta select,.ca-meta input[type=date]{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:5px 7px;font-size:11px;font-family:inherit}
+.ca-meta label{font-size:9px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px}
+.ca-del{position:absolute;top:10px;right:10px;background:transparent;border:none;color:var(--subtle);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
+.ca-del:hover{color:var(--red);background:var(--red-lt)}
+/* dashboard */
+.dash{padding:22px 24px;max-width:1040px;margin:0 auto}
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:9px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.tab-btn:hover{color:var(--text)}.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-pane{display:none}.tab-pane.show{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;border-top:3px solid}
+.stat-num{font-size:24px;font-weight:800;line-height:1.1;margin-bottom:2px}
+.stat-lbl{font-size:11px;color:var(--muted)}.stat-hint{font-size:10px;color:var(--subtle);margin-top:2px}
+.filters{display:flex;gap:5px;flex-wrap:wrap}
+.f-btn{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--white);transition:.15s;font-family:inherit}
+.f-btn:hover{border-color:var(--border2)}.f-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.inc-grid{display:flex;flex-direction:column;gap:8px}
+.inc{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;display:flex;transition:border-color .15s,box-shadow .15s}
+.inc:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.inc.od{border-color:var(--red-mid)}.inc.urg{border-color:var(--amber-mid)}
+.inc-stripe{width:4px;flex-shrink:0}
+.inc-stripe.r{background:var(--red)}.inc-stripe.a{background:#d97706}
+.inc-stripe.b{background:var(--blue)}.inc-stripe.g{background:var(--green)}
+.inc-body{flex:1;padding:13px 15px}
+.inc-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.inc-id{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.4px;margin-bottom:2px}
+.inc-title{font-size:13px;font-weight:700}
+.inc-badges{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;padding-top:2px}
+.inc-summary{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px;background:var(--surface);border-radius:var(--r);padding:7px 9px;border-left:3px solid var(--border2)}
+.inc-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.inc-meta span{font-size:11px;color:var(--muted)}
+.deadlines{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.dl{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;border:1px solid}
+.dl-r{background:var(--red-lt);border-color:var(--red-mid);color:var(--red)}
+.dl-a{background:var(--amber-lt);border-color:var(--amber-mid);color:var(--amber)}
+.dl-g{background:var(--green-lt);border-color:var(--green-mid);color:var(--green)}
+.dl-x{background:var(--surface);border-color:var(--border);color:var(--muted)}
+.prog-wrap{margin-bottom:9px}
+.prog-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px}
+.prog-track{background:var(--surface);border-radius:20px;height:4px;overflow:hidden;margin-bottom:4px;border:1px solid var(--border)}
+.prog-fill{height:100%;border-radius:20px}
+.pf-f{background:var(--blue)}
+.inc-actions{display:flex;gap:6px;flex-wrap:wrap}
+.del-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.del-av{width:32px;height:32px;background:var(--blue-lt);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0}
+.del-name{font-size:12px;font-weight:600}.del-email{font-size:11px;color:var(--muted)}.del-role{font-size:10px;color:var(--blue);margin-top:1px}
+.search-row{display:flex;gap:8px;margin-bottom:12px}
+.search-row input{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:8px 11px;font-size:12px;font-family:inherit}
+.search-row input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+/* investigation shell */
+.inv-wrap{display:flex;height:calc(100vh - 52px);overflow:hidden}
+.inv-sb{width:196px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.inv-sb-inner{flex:1;padding:10px 6px}
+.sb-grp{font-size:9px;font-weight:700;color:var(--subtle);letter-spacing:1px;text-transform:uppercase;padding:0 8px;margin-bottom:4px;margin-top:10px}
+.sb-item{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:var(--r);cursor:pointer;font-size:11px;font-weight:500;color:var(--muted);transition:.15s;margin-bottom:1px;user-select:none}
+.sb-item:hover{background:var(--surface);color:var(--text)}
+.sb-item.active{background:var(--blue-lt);color:var(--blue);font-weight:700}
+.sb-item.done{color:var(--green)}
+.sb-dot{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0;font-weight:700}
+.active .sb-dot{border-color:var(--blue);color:var(--blue)}
+.done .sb-dot{background:var(--green);border-color:var(--green);color:#fff}
+.sb-div{height:1px;background:var(--border);margin:6px 0}
+.sb-prog{padding:10px;border-top:1px solid var(--border)}
+.sb-prog-bar{background:var(--surface);border:1px solid var(--border);border-radius:20px;height:5px;overflow:hidden;margin-bottom:4px}
+.sb-prog-fill{height:100%;background:var(--blue);border-radius:20px;transition:width .4s}
+.sb-prog-lbl{font-size:10px;color:var(--muted)}
+.inv-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--page)}
+.inv-topbar{background:var(--white);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.inv-topbar h3{font-size:13px;font-weight:700}
+.inv-topbar p{font-size:11px;color:var(--muted);margin-top:1px}
+.inv-content{flex:1;overflow-y:auto;padding:18px 20px;max-width:860px;width:100%}
+/* violence questions table */
+.vq-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.vq-table th{text-align:left;padding:8px 12px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+.vq-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.vq-table tr:last-child td{border-bottom:none}
+.vq-group{background:var(--surface);font-size:12px;font-weight:700;color:var(--text);padding:8px 12px;border-bottom:1px solid var(--border)}
+/* chat */
+.chat-history{min-height:100px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.chat-user{display:flex;justify-content:flex-end}
+.chat-user-bubble{background:var(--blue-lt);border:1px solid var(--blue-mid);border-radius:var(--rl);padding:9px 13px;max-width:82%;font-size:12px;color:#1e3a8a;line-height:1.6}
+.chat-ai-bubble{background:var(--purple-lt);border:1px solid var(--purple-mid);border-radius:var(--rl);padding:10px 13px;max-width:90%;font-size:12px;line-height:1.6}
+.chat-label{font-size:9px;font-weight:700;color:var(--purple);margin-bottom:6px;letter-spacing:.3px}
+.conf-bar{margin-top:8px;display:flex;align-items:flex-start;gap:7px;padding-top:8px;border-top:1px solid var(--border)}
+/* modals */
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;align-items:center;justify-content:center}
+.modal-wrap.show{display:flex}
+.modal-box{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:24px;max-width:420px;width:100%;margin:20px}
+/* toasts */
+#toasts{position:fixed;bottom:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:5px}
+.toast{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:8px 13px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);animation:tin .2s ease;min-width:200px}
+.toast.t-s{border-color:var(--green-mid);color:var(--green)}
+.toast.t-w{border-color:var(--amber-mid);color:var(--amber)}
+.toast.t-i{border-color:var(--blue-mid);color:var(--blue)}
+@keyframes tin{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+@media(max-width:680px){
+  .inv-sb{width:44px}.sb-item span:not(.sb-dot){display:none}.sb-grp{display:none}
+  .stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.ca-meta{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-icon">&#128737;</div>
+  <div><div class="hdr-name">VIA</div><div class="hdr-sub">Violence Investigation</div></div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-ctx">
+    <div class="hdr-ctx-title" id="hdr-title">Dashboard</div>
+    <div class="hdr-ctx-sub">Ridge Meadows Hospital &mdash; Emergency Services</div>
+  </div>
+  <div class="hdr-right">
+    <div class="save-chip" id="save-chip" style="display:none"><span id="save-lbl">Saved</span></div>
+    <button class="btn btn-ghost btn-sm" id="btn-dash" style="display:none" onclick="navToDash()">&larr; Dashboard</button>
+    <div class="user-pill"><div class="av">WH</div><div style="font-size:11px;font-weight:600">Will Heller</div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="view show" id="view-dash">
+<div class="dash">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">My investigations</div>
+      <div class="dash-meta"><span style="color:var(--red);font-weight:600">1 overdue</span> &middot; 4 open &middot; 6 completed this year</div>
+    </div>
+  </div>
+
+  <div class="alert al-red" id="ov-alert" style="margin-bottom:18px">
+    <span class="al-icon">&#128680;</span>
+    <div><strong>INC-97472/97488</strong> is 6 hours past the 48-hour mark.</div>
+    <button class="btn btn-danger-o btn-sm" style="margin-left:auto" onclick="openFull()">Open &rarr;</button>
+    <button class="al-dismiss" onclick="this.closest('.alert').remove()">&times;</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(this,'t-inv')">Investigations</button>
+    <button class="tab-btn" onclick="switchTab(this,'t-del')">Delegate access</button>
+  </div>
+
+  <div class="tab-pane show" id="t-inv">
+    <div class="filters" style="margin-bottom:14px">
+      <button class="f-btn active" onclick="filterInc(this,'all')">All</button>
+      <button class="f-btn" onclick="filterInc(this,'overdue')">Overdue</button>
+      <button class="f-btn" onclick="filterInc(this,'progress')">In progress</button>
+      <button class="f-btn" onclick="filterInc(this,'pending')">Not started</button>
+    </div>
+
+    <div class="inc-grid">
+
+      <div class="inc-row" data-tags="overdue pending">
+        <div class="inc-row-status overdue">Overdue</div>
+        <div class="inc-row-body">
+          <div class="inc-row-id">INC-97472/97488 &middot; 2026-04-12 &middot; EHS Bay</div>
+          <div class="inc-row-title">Physical assault \u2014 code white &middot; patient to workers</div>
+          <div class="inc-row-desc">Two workers injured during code white. RPN BK kicked in torso; LPN WA spat on face/eyes.</div>
+        </div>
+        <div class="inc-row-deadline">
+          <div class="dl-time overdue">6h overdue</div>
+          <div class="dl-sub">48-hour mark</div>
+        </div>
+        <div class="inc-row-action">
+          <button class="btn btn-danger btn-sm" onclick="openFull()">Open &rarr;</button>
+        </div>
+      </div>
+
+      <div class="inc-row" data-tags="pending">
+        <div class="inc-row-status urgent">Due soon</div>
+        <div class="inc-row-body">
+          <div class="inc-row-id">INC-97510 &middot; 2026-04-14 &middot; Triage Zone B</div>
+          <div class="inc-row-title">Verbal threat \u2014 visitor to worker</div>
+          <div class="inc-row-desc">Visitor verbally aggressive toward triage nurse during high-volume shift. No physical contact.</div>
+        </div>
+        <div class="inc-row-deadline">
+          <div class="dl-time urgent">18h left</div>
+          <div class="dl-sub">48-hour mark</div>
+        </div>
+        <div class="inc-row-action">
+          <button class="btn btn-primary btn-sm" onclick="toast('Opening INC-97510\u2026','i')">Open &rarr;</button>
+        </div>
+      </div>
+
+      <div class="inc-row" data-tags="progress">
+        <div class="inc-row-status progress">In progress</div>
+        <div class="inc-row-body">
+          <div class="inc-row-id">INC-97488 &middot; 2026-03-28 &middot; 3 North</div>
+          <div class="inc-row-title">Physical assault \u2014 patient to worker (bite)</div>
+          <div class="inc-row-desc">RPN bitten on left forearm during personal care. Wound care provided; modified duties.</div>
+        </div>
+        <div class="inc-row-deadline">
+          <div class="dl-time">19d left</div>
+          <div class="dl-sub">45% complete</div>
+        </div>
+        <div class="inc-row-action">
+          <button class="btn btn-ghost btn-sm" onclick="toast('Opening INC-97488\u2026','i')">Continue &rarr;</button>
+        </div>
+      </div>
+
+      <div class="inc-row" data-tags="pending">
+        <div class="inc-row-status pending">Not started</div>
+        <div class="inc-row-body">
+          <div class="inc-row-id">INC-97465 &middot; 2026-03-22 &middot; Day Program C</div>
+          <div class="inc-row-title">Verbal aggression \u2014 patient to worker</div>
+          <div class="inc-row-desc">Patient verbally aggressive during group session. De-escalated by staff. CISM requested.</div>
+        </div>
+        <div class="inc-row-deadline">
+          <div class="dl-time">13d left</div>
+          <div class="dl-sub">30-day mark</div>
+        </div>
+        <div class="inc-row-action">
+          <button class="btn btn-primary btn-sm" onclick="toast('Opening INC-97465\u2026','i')">Open &rarr;</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="tab-pane" id="t-del">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">Delegate investigation access</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Grant H&S partners, reviewers, or worker representatives access. Delegates can view and contribute but cannot submit.</p>
+      <div class="search-row"><input id="del-search" placeholder="Search by name or email\u2026" oninput="searchDel(this.value)"><button class="btn btn-primary btn-sm" onclick="addDel()">Add</button></div>
+      <div id="del-results" style="margin-bottom:10px"></div>
+      <div class="divider"></div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.5px">CURRENT DELEGATES</div>
+      <div class="del-card"><div class="del-av">TK</div><div style="flex:1"><div class="del-name">Tanya Kowalski</div><div class="del-email">tanya.kowalski@fraserhealth.ca</div><div class="del-role">H&S Client Partner &middot; View &amp; contribute</div></div><button class="btn btn-ghost btn-xs" onclick="toast('Access removed','w')">Remove</button></div>
+      <div class="del-card"><div class="del-av">PL</div><div style="flex:1"><div class="del-name">Patricia Lim</div><div class="del-email">patricia.lim@fraserhealth.ca</div><div class="del-role">Quality Reviewer &middot; View only</div></div><button class="btn btn-ghost btn-xs" onclick="toast('Access removed','w')">Remove</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- INVESTIGATION -->
+<div class="view" id="view-full">
+<div class="inv-wrap">
+  <div class="inv-sb">
+    <div class="inv-sb-inner">
+      <div class="sb-grp">Intake</div>
+      <div class="sb-item" id="sb0" onclick="go(0)"><div class="sb-dot">1</div><span>Incident details</span></div>
+      <div class="sb-item" id="sb1" onclick="go(1)"><div class="sb-dot">2</div><span>Training</span></div>
+      <div class="sb-item" id="sb2" onclick="go(2)"><div class="sb-dot">3</div><span>Security report</span></div>
+      <div class="sb-item" id="sb3" onclick="go(3)"><div class="sb-dot">4</div><span>Staff statements</span></div>
+      <div class="sb-item" id="sb4" onclick="go(4)"><div class="sb-dot">5</div><span>Witnesses</span></div>
+      <div class="sb-item" id="sb5" onclick="go(5)"><div class="sb-dot">6</div><span>Scene &amp; context</span></div>
+      <div class="sb-div"></div>
+      <div class="sb-grp">Analysis</div>
+      <div class="sb-item" id="sb6" onclick="go(6)"><div class="sb-dot">7</div><span>Sequence of events</span></div>
+      <div class="sb-item" id="sb7" onclick="go(7)"><div class="sb-dot">8</div><span>Violence questions</span></div>
+      <div class="sb-item" id="sb8" onclick="go(8)"><div class="sb-dot">9</div><span>Contributing factors</span></div>
+      <div class="sb-item" id="sb9" onclick="go(9)"><div class="sb-dot">10</div><span>Corrective actions</span></div>
+      <div class="sb-div"></div>
+      <div class="sb-grp">Assistant</div>
+      <div class="sb-item" id="sb10" onclick="go(10)"><div class="sb-dot">&#10022;</div><span>AI assistant</span></div>
+    </div>
+    <div class="sb-prog">
+      <div class="sb-prog-bar"><div class="sb-prog-fill" id="f-prog" style="width:10%"></div></div>
+      <div class="sb-prog-lbl" id="f-lbl">Section 1 of 10</div>
+    </div>
+  </div>
+  <div class="inv-main">
+    <div class="inv-topbar">
+      <div><h3 id="f-title">1. Incident details</h3><p id="f-meta"></p></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-ghost btn-sm" id="f-back" onclick="go(cur-1)">&larr; Back</button>
+        <button class="btn btn-primary btn-sm" id="f-next" onclick="go(cur+1)">Save &amp; continue &rarr;</button>
+        <button class="btn btn-success btn-sm" id="f-submit" style="display:none" onclick="showComplete()">Complete &amp; export</button>
+      </div>
+    </div>
+    <div class="inv-content" id="f-content">
+      <div class="legend-bar">
+        <div class="lg-item"><div class="lg-line" style="background:var(--green)"></div><span>Auto-populated</span></div>
+        <div class="lg-item"><div class="lg-line" style="background:var(--blue)"></div><span>Manager entry</span></div>
+        <div class="lg-item"><div class="lg-line" style="background:var(--purple)"></div><span>AI-generated (review required)</span></div>
+        <div class="lg-item"><span class="tag t-req">Required</span></div>
+        <div class="lg-item"><span class="tag t-opt">Optional</span></div>
+      </div>
+      <div id="f-body"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- UNSAVED MODAL -->
+<div class="modal-wrap" id="unsaved-modal">
+  <div class="modal-box">
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px">Unsaved changes</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">You have unsaved changes. Leaving now will discard them.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="cancelNav()">Stay &amp; save</button>
+      <button class="btn btn-danger" onclick="confirmNav()">Leave without saving</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE MODAL -->
+<div class="modal-wrap" id="complete-modal">
+  <div class="modal-box">
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px">Complete &amp; export to Web IIT</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">You are confirming all sections have been reviewed, AI content validated, and this investigation is ready for Web IIT transfer.</p>
+    <div class="alert al-amber" style="margin-bottom:16px"><span class="al-icon">&#9888;&#65039;</span><div style="font-size:11px">You remain accountable for all submitted content.</div></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="document.getElementById('complete-modal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmComplete()">Yes, submit</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ── DATA ── */
+const INC = {
+  workers:[
+    {id:'97472',i:'WA',level:'High plus ATR',baseline:'Completed',refresher:'Not Completed',higherTask:'No',
+     stmt:'This was during a code white call that I attended. Security had taken the pt down to the ground. I was restraining the pt\'s legs while she was in supine position. Security allowed her to sit up while still on the ground, and then the pt started swearing at me and spat in my face. This landed all over my face, including both eyes.\n\nI was told to leave and wash my face, which I did. I triaged into the ER after.\n\nThe pt was high risk.'},
+    {id:'97488',i:'BK',level:'High plus ATR',baseline:'Completed',refresher:'Completed',higherTask:'No',
+     stmt:'We had an agitated psychiatric patient that was trying to run away. We tried to verbally de-escalate her, but she started to run towards the exit doors. At that point security stopped her and put her on the floor. We then tried to get her from the floor onto the stretcher at which point she kicked me twice in my left upper quadrant where the ribs are.\n\nSecurity then placed her back down. In the second attempt of securing her I somehow twisted my right ankle, but I was not aware of this until the next day.\n\nI have tenderness and soreness in my left rib area. I have swelling and pain in my right ankle upon movement and weight bearing.'},
+  ],
+  prelim:['Injured workers offered immediate support and triaged into ER','Scene assessed — no structural damage identified','BBF protocol initiated for WA; BK assessed for rib and ankle injuries'],
+  sec:`On Sunday, 12 April 2026, at approximately 1022 hours, Security observed certified patient J.W verbally escalating and exhibiting aggressive behaviour toward Dr S.F. Patient demanded discharge while being assessed.\n\nAt 1023 hours, patient kicked a chair and moved toward EHS interior — Code White initiated.\n\nAt 1025 hours, patient attempted to flee. Security intervened. RPN B.K. secured legs. At 1026 hours, patient actively kicked — right leg struck RPN B.K.'s torso. Patient moved to floor in supine. LPN W.A. assists.\n\nAt 1027 hours, patient spat at LPN W.A. — contact on right side of face and both eyes. Spit mask applied.\n\nAt 1030 hours, 6-point Pinel restraints applied. RPN B.K. sought medical attention. LPN W.A. pressing charges. Security cleared 1039 hours.`,
+};
+
+const METAS = [
+  {title:'1. Incident details',         meta:'Auto-populated from intake \u00b7 Review and confirm'},
+  {title:'2. Training compliance',       meta:'Auto-populated from LMS \u00b7 Review for each worker'},
+  {title:'3. Security report',           meta:'Upload PDF \u00b7 AI extracts narrative automatically'},
+  {title:'4. Staff statements',          meta:'Auto-populated from PWHCC \u00b7 Add follow-up notes'},
+  {title:'5. Witnesses',                 meta:'Record all witness observations'},
+  {title:'6. Scene & context',           meta:'Scene observation and contextual factors at time of incident'},
+  {title:'7. Sequence of events',        meta:'AI-generated from all inputs \u00b7 Review and edit'},
+  {title:'8. Violence context questions',meta:'AI answers standardized questions \u00b7 Manager confirms'},
+  {title:'9. Contributing factors',      meta:'AI analysis using best-practice causal reasoning \u00b7 Manager confirms'},
+  {title:'10. Corrective actions',        meta:'AI-suggested actions based on contributing factors \u00b7 Edit, copy, finalize'},
+  {title:'AI assistant',                 meta:'Ask any question about this investigation \u00b7 AI responds with confidence level'},
+];
+
+const TOTAL = 10; // navigable investigation sections (AI assistant is bonus)
+let cur = 0;
+const done = new Set();
+let dirty = false, pendingDest = null, saveTimer;
+let chatHistory = [];
+
+/* ── ROUTING ── */
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.getElementById('view-'+id).classList.add('show');
+  const inv = id==='full';
+  document.getElementById('btn-dash').style.display = inv?'':'none';
+  document.getElementById('save-chip').style.display = inv?'':'none';
+  document.getElementById('hdr-title').textContent = inv?'Full investigation \u2014 INC-97472/97488':'Dashboard';
+}
+function openFull(){dirty=false;cur=0;showView('full');render();}
+function navToDash(){
+  if(dirty){pendingDest='dash';document.getElementById('unsaved-modal').classList.add('show');return;}
+  showView('dash');
+}
+function cancelNav(){document.getElementById('unsaved-modal').classList.remove('show');pendingDest=null;}
+function confirmNav(){
+  document.getElementById('unsaved-modal').classList.remove('show');dirty=false;
+  if(pendingDest==='dash') showView('dash');
+  else if(pendingDest!==null){cur=pendingDest;render();}
+  pendingDest=null;
+}
+function markDirty(){
+  dirty=true;
+  const chip=document.getElementById('save-chip');
+  chip.classList.add('saving');document.getElementById('save-lbl').textContent='Saving\u2026';
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{dirty=false;chip.classList.remove('saving');document.getElementById('save-lbl').textContent='Saved';},1200);
+}
+document.addEventListener('input',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))markDirty();});
+
+function go(i){
+  if(i<0||i>=METAS.length) return;
+  if(dirty){pendingDest=i;document.getElementById('unsaved-modal').classList.add('show');return;}
+  done.add(cur);cur=i;render();
+}
+
+function render(){
+  // sidebar
+  for(let i=0;i<METAS.length;i++){
+    const el=document.getElementById('sb'+i);
+    el.className='sb-item'+(i===cur?' active':done.has(i)?' done':'');
+    el.querySelector('.sb-dot').textContent=done.has(i)?'\u2713':(i<10?i+1:'\u2736');
+  }
+  // topbar
+  document.getElementById('f-title').textContent=METAS[cur].title;
+  document.getElementById('f-meta').textContent=METAS[cur].meta;
+  // progress (only count the 10 main sections, not AI assistant)
+  const pct=Math.round(((Math.min(cur,TOTAL-1)+1)/TOTAL)*100);
+  document.getElementById('f-prog').style.width=pct+'%';
+  document.getElementById('f-lbl').textContent=cur<TOTAL?'Section '+(cur+1)+' of '+TOTAL:'AI Assistant';
+  // nav buttons
+  document.getElementById('f-back').disabled=cur===0;
+  document.getElementById('f-next').style.display=cur<TOTAL-1?'':'none';
+  document.getElementById('f-submit').style.display=cur===TOTAL-1?'':'none';
+  // content
+  const sections=[s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10];
+  document.getElementById('f-body').innerHTML=sections[cur]();
+  if(cur===2) initUpload();
+  if(cur===7) autoAnswerVQ();
+  dirty=false;
+  document.querySelector('.inv-main').scrollTo(0,0);
+}
+
+/* ── DASHBOARD ── */
+function switchTab(btn,id){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('show'));document.getElementById(id).classList.add('show');
+}
+function filterInc(btn,f){
+  document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.querySelectorAll('.inc-grid .inc').forEach(c=>{c.style.display=(f==='all'||c.dataset.tags.includes(f))?'':'none';});
+}
+const PEOPLE=[{name:'James Nguyen',email:'james.nguyen@fraserhealth.ca',role:'H&S Client Partner'},{name:'Sandra Osei',email:'sandra.osei@fraserhealth.ca',role:'Quality Reviewer'},{name:'Mike Tremblay',email:'mike.tremblay@fraserhealth.ca',role:'JOHS Worker Rep'}];
+function searchDel(q){
+  const res=document.getElementById('del-results');
+  if(!q||q.length<2){res.innerHTML='';return;}
+  const m=PEOPLE.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.email.toLowerCase().includes(q.toLowerCase()));
+  res.innerHTML=!m.length?'<div style="font-size:12px;color:var(--muted);padding:6px">No results.</div>':
+    m.map(p=>`<div class="del-card" style="margin-bottom:6px"><div class="del-av">${p.name.split(' ').map(n=>n[0]).join('')}</div><div style="flex:1"><div class="del-name">${p.name}</div><div class="del-email">${p.email}</div><div class="del-role">${p.role}</div></div><button class="btn btn-primary btn-xs" data-name="${p.name}" onclick="doAdd(this)">Add</button></div>`).join('');
+}
+function addDel(){const q=document.getElementById('del-search').value;if(q)toast('Invitation sent to '+q,'s');}
+function doAdd(btn){document.getElementById('del-results').innerHTML='';document.getElementById('del-search').value='';toast(btn.dataset.name+' added as delegate','s');}
+
+/* ── SECTIONS ── */
+function field(label,content,cls){return `<div class="field${cls?' '+cls:''}""><div class="field-label">${label}</div>${content}</div>`;}
+function ro(v){return `<div class="ro">${v}</div>`;}
+
+function s0(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="sec-title">Incident details</div><span class="tag t-src">Auto-populated</span></div>
+  <div class="alert al-blue"><span class="al-icon">&#8505;&#65039;</span><div>Pre-populated from the provincial intake system. Contact PWHCC if corrections are needed.</div></div>
+  <div class="grid2">
+    ${field('WHITE ID(s)',ro('97472 &middot; 97488'))}
+    ${field('Violence type',ro('Physical assault &mdash; patient to worker (code white)'))}
+    ${field('Date / time',ro('2026-04-12 &middot; 1030 hrs'))}
+    ${field('Site',ro('Ridge Meadows Hospital'))}
+    ${field('Department',ro('Emergency, General RMH'))}
+    ${field('Location',ro('EHS Bay'))}
+  </div>
+</div>`;}
+
+function addPrelimAction(){
+  const c=document.getElementById('extra-prelim');
+  const n=INC.prelim.length+c.querySelectorAll('input').length+1;
+  const d=document.createElement('div');d.style.cssText='display:flex;gap:8px;margin-bottom:6px;align-items:center;margin-top:6px';
+  d.innerHTML=`<span style="width:18px;color:var(--muted);font-size:11px;font-weight:700;flex-shrink:0">${n}</span><input placeholder="Describe action\u2026" style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:6px 9px;font-size:12px">`;
+  c.appendChild(d);
+}
+
+function s1(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Violence training compliance</div><span class="tag t-src">Auto-populated from LMS</span></div>
+  <div class="sec-desc">Overdue refreshers must be reflected in contributing factors and corrective actions.</div>
+  <div style="overflow-x:auto"><table class="tt"><thead><tr><th>Worker</th><th>Training level</th><th>Baseline</th><th>Refresher</th><th>Higher task?</th><th>Comments</th></tr></thead>
+  <tbody>${INC.workers.map(w=>{const ok=w.refresher==='Completed';return `<tr>
+    <td><strong>${w.i}</strong><br><span style="color:var(--muted);font-size:10px">${w.id}</span></td>
+    <td style="font-size:11px">${w.level}</td>
+    <td><span class="badge b-green">${w.baseline}</span></td>
+    <td><span class="badge ${ok?'b-green':'b-red'}">${w.refresher}</span></td>
+    <td style="font-size:11px">${w.higherTask}</td>
+    <td><textarea style="min-width:100px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:4px 7px;font-size:11px;min-height:38px;width:100%;resize:vertical;font-family:inherit" placeholder="Comments\u2026"></textarea></td>
+  </tr>`;}).join('')}</tbody></table></div>
+  <div class="alert al-amber" style="margin-top:12px"><span class="al-icon">&#9888;&#65039;</span><div><strong>WA (97472): refresher not completed.</strong> Flag as contributing factor and address in corrective actions.</div></div>
+</div>`;}
+
+function s2(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Security report</div><span class="tag t-ai">AI extraction</span></div>
+  <div class="sec-desc">Upload the PDF from <em>safety.reports@fraserhealth.ca</em>. AI extracts the narrative. Review and redact patient names before saving.</div>
+  <div id="upload-area">
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('pdf-in').click()">
+      <div style="font-size:22px;margin-bottom:7px">&#128196;</div>
+      <div style="font-size:12px;color:var(--muted)"><strong style="color:var(--text)">Click to upload</strong> or drag and drop</div>
+    </div>
+    <input type="file" id="pdf-in" accept=".pdf,.txt" style="display:none" onchange="handleUpload(this)">
+  </div>
+  <div id="upload-result" style="display:none;margin-top:12px">
+    <div class="alert al-green"><span class="al-icon">&#9989;</span><div><strong>Uploaded.</strong> Narrative extracted. Review and redact patient names.</div></div>
+    <div class="field ai-field"><div class="field-label">Extracted narrative <span class="tag t-ai">Review &amp; redact</span></div><textarea rows="14" style="font-size:11px;line-height:1.7">${INC.sec}</textarea></div>
+    <div class="field mgr"><div class="field-label">Manager notes <span class="tag t-opt">Optional</span></div><textarea placeholder="Note any gaps or discrepancies\u2026"></textarea></div>
+  </div>
+  <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="document.getElementById('sec-manual').style.display='block'">No report yet &mdash; enter manually</button>
+  <div id="sec-manual" style="display:none;margin-top:10px"><div class="field mgr"><div class="field-label">Narrative (manual entry)</div><textarea rows="10" placeholder="Paste or type the security report narrative\u2026"></textarea></div></div>
+</div>`;}
+
+function initUpload(){
+  const dz=document.getElementById('drop-zone');if(!dz)return;
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop',e=>{e.preventDefault();handleUpload({files:e.dataTransfer.files})});
+}
+function handleUpload(inp){
+  const f=(inp.files||[])[0];if(!f)return;
+  const dz=document.getElementById('drop-zone');dz.classList.add('done');
+  dz.innerHTML=`<div style="font-size:20px;margin-bottom:6px">&#9989;</div><div style="font-size:12px;color:var(--muted)"><strong>${f.name}</strong><br>Extracting\u2026</div>`;
+  setTimeout(()=>{document.getElementById('upload-result').style.display='block';toast('Narrative extracted \u2014 review and redact patient names','i');},1600);
+}
+
+function s3(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Staff statements</div><span class="tag t-src">Auto-populated</span></div>
+  <div class="alert al-blue"><span class="al-icon">&#128161;</span><div>Include <strong>specific date and time references</strong> in your follow-up notes to support AI sequence generation.</div></div>
+  ${INC.workers.map(w=>`<div class="card-sm" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+      <strong style="font-size:12px">${w.i} (${w.id})</strong>
+      <span class="badge b-gray">${w.level}</span>
+      <span class="badge ${w.refresher==='Completed'?'b-green':'b-red'}">${w.refresher==='Completed'?'Training current':'Refresher overdue'}</span>
+    </div>
+    <div class="field"><div class="field-label">Statement <span class="tag t-src">PWHCC source</span></div><div class="ro" style="white-space:pre-wrap;font-size:11px;line-height:1.8">${w.stmt}</div></div>
+    <div class="field mgr"><div class="field-label">Follow-up interview notes <span class="tag t-opt">Optional</span></div><textarea placeholder="Record follow-up questions and responses. Include date/time of interview and specific times for events described\u2026"></textarea></div>
+  </div>`).join('')}
+</div>`;}
+
+function s4(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Witness statements</div><span class="tag t-mgr">Manager entry</span></div>
+  <div class="alert al-blue"><span class="al-icon">&#128161;</span><div>Include <strong>specific times for key observed events</strong> to support the AI sequence of events.</div></div>
+  <div id="witness-list"></div>
+  <button class="btn btn-ghost btn-sm" onclick="addWitness()">+ Add witness</button>
+</div>`;}
+
+function pickEnv(btn){
+  const group=btn.parentElement;
+  const val=btn.dataset.val;
+  group.querySelectorAll('.env-btn').forEach(b=>b.classList.remove('env-sel-yes','env-sel-no','env-sel-na'));
+  btn.classList.add('env-sel-'+val);
+  markDirty();
+}
+function addWitness(){
+  const l=document.getElementById('witness-list');
+  const n=l.querySelectorAll('.card-sm').length+1;
+  const d=document.createElement('div');d.className='card-sm';d.style.marginBottom='10px';
+  d.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-size:11px;font-weight:700;color:var(--muted)">WITNESS ${n}</div>
+    <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="this.closest('.card-sm').remove()">Remove</button>
+  </div>
+  <div class="grid2" style="margin-bottom:8px">
+    <div class="field mgr"><div class="field-label">Initials <span class="tag t-req">Required</span></div><input placeholder="Initials"></div>
+    <div class="field mgr"><div class="field-label">Role / position</div><input placeholder="e.g. PCC, RN, Security Officer\u2026"></div>
+  </div>
+  <div class="field mgr"><div class="field-label">Statement <span class="tag t-req">Required</span></div><textarea placeholder="Include specific times, e.g. \u2018At approximately 1025 hrs, I observed\u2026\u2019"></textarea></div>
+  <div class="field mgr"><div class="field-label">Follow-up notes <span class="tag t-opt">Optional</span></div><textarea placeholder="Additional questions and responses\u2026"></textarea></div>`;
+  l.appendChild(d);
+}
+
+function s5(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Scene observation</div><span class="tag t-mgr">Manager entry &mdash; site visit required</span></div>
+  <div class="alert al-amber"><span class="al-icon">&#9888;&#65039;</span><div>Complete after your in-person site visit.</div></div>
+  <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:8px">ENVIRONMENTAL CHECKLIST</div>
+  <div class="env-list">
+    ${[
+      ['Adequate sightlines and visibility in the area','Were blind spots present?'],
+      ['Exits and egress routes clear and accessible','No obstructions blocking emergency exits'],
+      ['Duress / panic alarms accessible and visible','Staff aware of alarm locations?'],
+      ['Physical barriers appropriate between staff and public','Counters, gates, or barriers adequate?'],
+      ['No weapons of opportunity observed','Crutches, chairs, loose equipment removed?'],
+      ['Hallways and corridors free of obstruction','No excess stretchers or clutter?'],
+    ].map(([l,h],i)=>`<div class="env-row">
+      <div class="env-text"><div class="env-label">${l}</div><div class="env-hint">${h}</div></div>
+      <div class="env-choices" data-idx="${i}">
+        <button type="button" class="env-btn" data-val="yes" onclick="pickEnv(this)">Yes</button>
+        <button type="button" class="env-btn" data-val="no" onclick="pickEnv(this)">No</button>
+        <button type="button" class="env-btn" data-val="na" onclick="pickEnv(this)">N/A</button>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="field mgr" style="margin-top:12px"><div class="field-label">Scene observations and specific concerns <span class="tag t-req">Required</span></div><textarea rows="3" placeholder="Describe layout, conditions, and concerns from your walkthrough\u2026"></textarea></div>
+  <div class="divider"></div>
+  <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:10px">CONTEXTUAL FACTORS AT TIME OF INCIDENT</div>
+  <div class="grid2">
+    <div class="field mgr"><div class="field-label">Staffing level <span class="tag t-req">Required</span></div><select><option>Full complement</option><option selected>Short-staffed</option><option>Significantly short-staffed</option><option>Unknown</option></select></div>
+    <div class="field mgr"><div class="field-label">Patient / client volume <span class="tag t-req">Required</span></div><select><option>Normal</option><option selected>High volume</option><option>Over capacity</option><option>Unknown</option></select></div>
+    <div class="field mgr"><div class="field-label">Unit over capacity?</div><select><option>No</option><option selected>Yes</option><option>Unknown</option></select></div>
+    <div class="field mgr"><div class="field-label">Shift context</div><select><option>Day &mdash; regular</option><option selected>Day &mdash; high demand</option><option>Evening</option><option>Night</option><option>Shift change</option></select></div>
+  </div>
+  <div class="field mgr"><div class="field-label">Staffing and workload notes <span class="tag t-opt">Optional</span></div><textarea placeholder="Staffing roles, coverage gaps, workload context\u2026"></textarea></div>
+  <div class="field mgr"><div class="field-label">Communication / handoff factors <span class="tag t-req">Required</span></div><textarea placeholder="Communication gaps, missing alerts, handoff issues\u2026 Note: patient had a prior code white with no indicator applied."></textarea></div>
+  <div class="field mgr"><div class="field-label">Additional context <span class="tag t-opt">Optional</span></div><textarea placeholder="Any other background relevant to this incident\u2026"></textarea></div>
+</div>`;}
+
+function s6(){
+  const events=[
+    {t:'~1000',d:'Pre-incident context: high-volume shift, unit over capacity. Patient J.W. certified and present in EHS Bay being assessed by physician.'},
+    {t:'1022', d:'Security observes patient verbally escalating and exhibiting aggressive behaviour toward physician. S/O K.M. advised to attend.'},
+    {t:'1023', d:'Patient kicks chair inside family room and moves toward EHS interior. Clinical staff initiate code white.'},
+    {t:'1025', d:'Patient attempts to flee. Security intervenes. RPN BK secures legs. Patient actively resists.'},
+    {t:'1026', d:'Patient kicks \u2014 right leg strikes RPN BK\u2019s left torso and ribs. [Injury 1 \u2014 BK]. Patient moved to floor in supine. LPN WA assists.'},
+    {t:'1027', d:'Patient spits at LPN WA \u2014 contact on right side of face and both eyes. [Injury 2 \u2014 WA]. Spit mask applied.'},
+    {t:'1030', d:'Patient assisted onto code white stretcher. 6-point Pinel restraints applied. WA directed to leave area and wash face.'},
+    {t:'1039', d:'Security clears. WA triages into ER for BBF protocol. BK notes ankle pain the following morning.'},
+  ];
+  const initialText = events.map(e => `${e.t.padEnd(8)}${e.d}`).join('\n');
+  return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Sequence of events</div><span class="tag t-ai">AI-generated</span></div>
+  <div class="alert al-purple"><span class="al-icon">&#10022;</span><div><strong>AI has drafted this sequence</strong> by synthesizing all worker statements, security report, and contextual notes. Edit directly below \u2014 the format is ready to copy and paste into Web IIT.</div></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div style="font-size:11px;color:var(--muted)">Format: <code style="background:var(--surface);padding:2px 5px;border-radius:4px;font-size:10px">TIME &nbsp; Description</code> &mdash; one event per line</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-ai btn-sm" onclick="runAI('seq','ai-seq-out')">&#10022; Regenerate with AI</button>
+      <button class="btn btn-primary btn-sm" onclick="copySeqText()">&#128203; Copy all</button>
+    </div>
+  </div>
+  <textarea id="seq-text" rows="18" style="width:100%;background:var(--white);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:var(--r);color:var(--text);padding:14px;font-size:12px;font-family:'Courier New',monospace;line-height:1.9;resize:vertical;tab-size:8" placeholder="Time     Description...">${initialText}</textarea>
+  <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6">
+    &bull; Each line is one event &nbsp; &bull; Use a tab or spaces between time and description &nbsp; &bull; Add new lines anywhere &nbsp; &bull; Delete lines to remove events
+  </div>
+  <div id="ai-seq-out" style="margin-top:10px"></div>
+</div>`;}
+
+function copySeqText(){
+  const ta=document.getElementById('seq-text');if(!ta)return;
+  const header=`SEQUENCE OF EVENTS\nINC-97472/97488 \u2014 Ridge Meadows Hospital, EHS Bay \u2014 2026-04-12\n${'='.repeat(60)}\n\n`;
+  const footer=`\n\n[AI DRAFT \u2014 MANAGER REVIEWED]`;
+  navigator.clipboard.writeText(header+ta.value+footer).then(()=>toast('Sequence copied with header','s'));
+}
+
+/* ── S7: Violence Questions ── */
+const VQ_GROUPS=[
+  {group:'Work environment',questions:['Did the layout/design of the work environment contribute to the incident?','Was there adequate work space to perform the task?']},
+  {group:'Equipment',questions:['Did the worker use physical or chemical restraints in this task?','Should the worker have used restraints?']},
+  {group:'Personal Protective Equipment (PPE)',questions:['Was a personal alarm required?','Was the worker wearing a personal alarm?']},
+  {group:'Workers / Others',questions:['Did an interaction, action or lack of action with another worker contribute to the incident?','Was assistance requested for this task?','Was assistance provided?','Did a patient/client/resident contribute to the incident?','Did anyone else contribute to the incident?']},
+  {group:'Personal Factors / Other Issues',questions:['Did any worker-related factors contribute to the incident?','Are there any other issues that led to this incident?']},
+];
+
+function s7(){
+  const rows=VQ_GROUPS.map(g=>`
+    <tr><td colspan="3" class="vq-group">${g.group}</td></tr>
+    ${g.questions.map((q,qi)=>`<tr>
+      <td style="color:var(--text)">${q}</td>
+      <td style="width:100px;text-align:center" id="vqa-${g.group.replace(/\W/g,'')}-${qi}"><span style="color:var(--muted);font-size:11px">&hellip;</span></td>
+      <td style="width:110px;text-align:center" id="vqc-${g.group.replace(/\W/g,'')}-${qi}"><span style="color:var(--muted);font-size:11px">&hellip;</span></td>
+    </tr>`).join('')}`).join('');
+  return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Violence context questions</div><span class="tag t-ai">AI-answered</span></div>
+  <div class="alert al-purple"><span class="al-icon">&#10022;</span><div><strong>AI is analyzing the incident data</strong> to answer each question. Review every response and override using the dropdown if needed. Confidence reflects how clearly the evidence supports the answer.</div></div>
+  <div id="vq-loading" class="loading"><div class="spinner"></div>Analyzing incident data and answering questions&hellip;</div>
+  <div id="vq-table-wrap" style="display:none;overflow-x:auto">
+    <table class="vq-table">
+      <thead><tr>
+        <th>Question</th>
+        <th style="width:100px;text-align:center">Answer</th>
+        <th style="width:110px;text-align:center">Confidence</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+  <div class="field mgr" style="margin-top:14px"><div class="field-label">Manager notes on violence context <span class="tag t-opt">Optional</span></div><textarea placeholder="Add any context or clarification about the answers above&hellip;"></textarea></div>
+</div>`;}
+
+async function autoAnswerVQ(){
+  const prompt=`You are a workplace violence investigation assistant. Your task is to answer standardized violence-context questions based ONLY on the incident data provided below.
+
+REASONING APPROACH
+For each question, think through the evidence step-by-step before answering:
+1. What does the worker statement say about this?
+2. What does the security report say about this?
+3. What does the context (staffing, capacity, training) suggest?
+4. Is there direct evidence, inferred evidence, or no evidence?
+
+CONFIDENCE RUBRIC
+- High: Direct, explicit evidence in the worker statement, security report, or system data clearly supports the answer.
+- Medium: Reasonable inference from the available context, but not explicitly stated. Multiple sources point the same direction.
+- Low: Speculation, absence of evidence, or conflicting signals across sources.
+
+INCIDENT DATA
+Code White incident, Ridge Meadows Hospital EHS Bay, 2026-04-12 1030hrs.
+Worker WA spat on face and eyes. Worker BK kicked in torso; twisted ankle.
+Contextual factors: Unit over capacity, short-staffed, high demand shift. Patient had prior Code White with no behavioural indicator applied. WA refresher training overdue; BK training current.
+
+Security report: ${INC.sec}
+
+Worker WA statement: ${INC.workers[0].stmt}
+
+Worker BK statement: ${INC.workers[1].stmt}
+
+RESPONSE FORMAT
+Return ONLY a JSON array with exactly 13 objects in the order below. Each object must have "answer" (Yes/No/Unknown) and "confidence" (High/Medium/Low). No markdown fences, no explanation text.
+
+Questions in order:
+1. Did the layout/design of the work environment contribute to the incident?
+2. Was there adequate work space to perform the task?
+3. Did the worker use physical or chemical restraints in this task?
+4. Should the worker have used restraints?
+5. Was a personal alarm required?
+6. Was the worker wearing a personal alarm?
+7. Did an interaction, action or lack of action with another worker contribute to the incident?
+8. Was assistance requested for this task?
+9. Was assistance provided?
+10. Did a patient/client/resident contribute to the incident?
+11. Did anyone else contribute to the incident?
+12. Did any worker-related factors contribute to the incident?
+13. Are there any other issues that led to this incident?`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:AI_MODEL,max_tokens:800,messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();
+    let answers=[];
+    try{
+      const raw=(d.content?.[0]?.text||'').replace(/```json|```/g,'').trim();
+      answers=JSON.parse(raw);
+    }catch(e){answers=[];}
+    document.getElementById('vq-loading').style.display='none';
+    document.getElementById('vq-table-wrap').style.display='block';
+    let idx=0;
+    VQ_GROUPS.forEach(g=>{
+      g.questions.forEach((q,qi)=>{
+        const ans=answers[idx]||{answer:'Unknown',confidence:'Low'};
+        const key=g.group.replace(/\W/g,'');
+        const aEl=document.getElementById(`vqa-${key}-${qi}`);
+        const cEl=document.getElementById(`vqc-${key}-${qi}`);
+        if(aEl){
+          const col=ans.answer==='Yes'?'var(--blue)':ans.answer==='No'?'var(--green)':'var(--muted)';
+          aEl.innerHTML=`<select onchange="markDirty()" style="background:var(--white);border:1px solid var(--border);border-radius:5px;color:${col};padding:3px 6px;font-size:11px;font-weight:600;cursor:pointer"><option ${ans.answer==='Yes'?'selected':''}>Yes</option><option ${ans.answer==='No'?'selected':''}>No</option><option ${ans.answer==='Unknown'?'selected':''}>Unknown</option></select>`;
+        }
+        if(cEl){
+          const cColor=ans.confidence==='High'?'var(--green)':ans.confidence==='Medium'?'var(--amber)':'var(--red)';
+          const cBg=ans.confidence==='High'?'var(--green-lt)':ans.confidence==='Medium'?'var(--amber-lt)':'var(--red-lt)';
+          const cBorder=ans.confidence==='High'?'var(--green-mid)':ans.confidence==='Medium'?'var(--amber-mid)':'var(--red-mid)';
+          cEl.innerHTML=`<span style="background:${cBg};color:${cColor};border:1px solid ${cBorder};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">${ans.confidence}</span>`;
+        }
+        idx++;
+      });
+    });
+  }catch(e){
+    document.getElementById('vq-loading').innerHTML=`<span style="color:var(--red);font-size:12px">Error: ${e.message}</span>`;
+  }
+}
+
+/* ── STANDARDIZED CONTRIBUTING FACTORS LIST ── */
+const CF_LIST=[
+  {cat:'Procedures / Education',items:[
+    'Lack of Procedures/Guidelines — Absence of Procedures/Guidelines in the organization',
+    'Inadequate Procedures/Guidelines',
+    'Lack of Education/Training — Absence of Education/Training in the organization',
+    'Inadequate Education/Training',
+    'Point Of Care/Use Assessment Not Completed',
+    'Inadequate Point of Care/Use Assessment',
+  ]},
+  {cat:'Workspace / Environment',items:[
+    'Inadequate Workspace To Complete Task',
+    'Weather Conditions',
+    'Organizational Capacity Exceeded — Unanticipated short-term demand exceeded the department or organizational capacity',
+  ]},
+  {cat:'Equipment / Materials',items:[
+    'Equipment Design or Material Characteristics',
+    'Equipment/Material Malfunction',
+    'Equipment/Material Not Accessible — Normally available in the organization but not readily available to the worker',
+    'Inadequate Equipment/Material Inspection',
+    'Inappropriate Equipment/Material Used',
+    'Inadequate Equipment/Material Maintenance',
+    'Lack of Equipment/Material — Absence of Equipment/Material in the organization',
+    'Incorrect Use Of Equipment/Materials',
+    'Obsolete Equipment/Material Expiration Date Exceeded',
+    'Vehicle Factor — Mechanical or physical factor associated with a vehicle',
+  ]},
+  {cat:'PPE / Clothing',items:[
+    'Footwear Inappropriate',
+    'Inappropriate clothing — Worker\'s clothing contributed to the incident',
+    'Incorrect Use of PPE',
+    'PPE Characteristics — Characteristics of PPE including design or material',
+    'Inappropriate PPE — Worker was wearing PPE but it was not the correct PPE required to perform the task safely',
+    'PPE Failure',
+  ]},
+  {cat:'Workers / Others',items:[
+    'Action Of Others — Non-Workers',
+    'Action Of Others — Workers',
+    'Assistance Not Available When Requested',
+    'Assistance Not Provided When Requested',
+    'Communication Difficulties — Issue with conveying message between worker and patient/visitor due to language barriers',
+    'Inappropriate Worker Conduct — Inappropriate behaviour e.g. horseplay, practical jokes',
+  ]},
+  {cat:'Patient Factors',items:[
+    'Change In Patient\'s Condition Since Last Assessment',
+    'Patient-Unpredictable Behavior',
+    'Patient-Unpredictable Physical Capabilities',
+    'Patient Bariatric',
+    'Patient Unable To Follow Directions',
+    'Reactive Behavior Of Patient',
+    'Resistive Behavior Of Patient',
+  ]},
+  {cat:'Worker Factors',items:[
+    'Job Demands Exceed Worker\'s Capacity',
+    'Task Performed Over Extended Periods',
+    'Worker Distracted',
+    'Worker Fatigued',
+    'Worker Felt Rushed',
+    'Worker Had Pre-Existing Condition',
+    'Worker Inexperienced With Task',
+    'Worker Sickness',
+    'Worker Under the Influence or Medicated (Prescribed Or Illicit)',
+  ]},
+];
+
+function s8(){
+  // pre-selected by AI based on this specific incident
+  const aiPicks=new Set([
+    'Lack of Education/Training — Absence of Education/Training in the organization',
+    'Inadequate Education/Training',
+    'Inadequate Procedures/Guidelines',
+    'Organizational Capacity Exceeded — Unanticipated short-term demand exceeded the department or organizational capacity',
+    'Action Of Others — Non-Workers',
+    'Patient-Unpredictable Behavior',
+    'Reactive Behavior Of Patient',
+    'Resistive Behavior Of Patient',
+    'Change In Patient\'s Condition Since Last Assessment',
+    'Worker Felt Rushed',
+  ]);
+
+  const groupHtml = CF_LIST.map(g=>`
+    <div class="cf-group">
+      <div class="cf-group-hdr">${g.cat}</div>
+      <div class="cf-items">
+        ${g.items.map(item=>{
+          const checked=aiPicks.has(item);
+          return `<label class="cf-check ${checked?'cf-checked':''}">
+            <input type="checkbox" ${checked?'checked':''} onchange="this.closest('.cf-check').classList.toggle('cf-checked',this.checked);markDirty()">
+            <span>${item}${checked?' <span class="cf-ai-mark">&#10022; AI</span>':''}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Contributing factors</div><span class="tag t-ai">AI pre-selected</span></div>
+  <div class="alert al-purple"><span class="al-icon">&#10022;</span><div><strong>AI has pre-selected likely contributing factors</strong> from the standardized list based on the evidence collected. Items marked <span class="cf-ai-mark">&#10022; AI</span> were suggested by the AI \u2014 review each, uncheck any that don't apply, and add any others you've identified.</div></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">
+    <div style="font-size:11px;color:var(--muted)"><strong id="cf-count" style="color:var(--text)">${aiPicks.size}</strong> factors selected</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" onclick="cfClearAll()">Clear all</button>
+      <button class="btn btn-ai btn-sm" onclick="runAI('factors-rationale','ai-factors-out')">&#10022; Generate rationale</button>
+    </div>
+  </div>
+  <div class="cf-list">${groupHtml}</div>
+  <div class="field mgr" style="margin-top:14px"><div class="field-label">Other contributing factors not in the list <span class="tag t-opt">Optional</span></div>
+    <textarea placeholder="Note any contributing factors specific to this incident that aren't captured in the standardized list above\u2026"></textarea>
+  </div>
+  <div id="ai-factors-out" style="margin-top:10px"></div>
+</div>`;
+}
+
+function cfClearAll(){
+  document.querySelectorAll('.cf-check input[type=checkbox]').forEach(cb=>{
+    cb.checked=false;
+    cb.closest('.cf-check').classList.remove('cf-checked');
+    cb.closest('.cf-check').querySelector('.cf-ai-mark')?.remove();
+  });
+  updateCFCount();
+  markDirty();
+}
+
+function updateCFCount(){
+  const n=document.querySelectorAll('.cf-check input[type=checkbox]:checked').length;
+  const el=document.getElementById('cf-count');
+  if(el) el.textContent=n;
+}
+
+document.addEventListener('change',e=>{
+  if(e.target.matches('.cf-check input[type=checkbox]')) updateCFCount();
+});
+
+function s9(){
+  const suggested=[
+    {reason:'Address communication/handoff failure that led to absence of behavioural alert',
+     v:'Apply ALERT behavioural indicator for patient J.W. immediately and ensure risk is communicated to all treating teams across future encounters.'},
+    {reason:'Prevent recurrence by closing systemic gap in indicator application',
+     v:'Implement a standardized process for applying behavioural indicators following all code white events involving identified patients. Include verification step at handoff.'},
+    {reason:'Address training compliance gap identified for one of the injured workers',
+     v:'Enroll WA (97472) in violence prevention refresher training within 30 days. Confirm completion and document in LMS.'},
+    {reason:'Identify and close broader training compliance gaps in the department',
+     v:'Audit violence prevention refresher training compliance across the Emergency department and report gaps to Clinical Lead within 60 days.'},
+    {reason:'Reduce environmental risk factors in the area where the injuries occurred',
+     v:'Review EHS Bay layout for physical management space, sightlines, and egress during code white situations. Implement environmental modifications as needed.'},
+  ];
+  return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">Corrective actions</div><span class="tag t-ai">AI-suggested</span></div>
+  <div class="alert al-purple"><span class="al-icon">&#10022;</span><div><strong>AI has suggested corrective actions</strong> based on the contributing factors and evidence. Edit any action directly, add new ones, or remove what doesn't apply. <strong>All actions require your confirmation before submission.</strong></div></div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">
+    <div style="font-size:11px;color:var(--muted)"><strong id="ca-count" style="color:var(--text)">${suggested.length}</strong> corrective actions</div>
+    <button class="btn btn-ai btn-sm" onclick="runAI('ca','ai-ca-out')">&#10022; Regenerate suggestions</button>
+  </div>
+
+  <div class="alert al-blue" style="margin-bottom:14px"><span class="al-icon">&#8505;&#65039;</span><div>Edit the <strong>Action details</strong> on the left as needed \u2014 this is the text you'll copy into Web IIT. The <strong>Reason</strong> on the right is for your reference only and is not part of what you copy.</div></div>
+
+  <div id="ca-list">
+    ${suggested.map((s,i)=>caCardSimple(i+1,s.v,s.reason,'AI suggested')).join('')}
+  </div>
+  <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="addCASimple()">+ Add corrective action</button>
+  <div id="ai-ca-out" style="margin-top:14px"></div>
+</div>`;}
+
+function caCardSimple(n,action,reason,source){
+  return `<div class="ca-card-simple" data-num="${n}">
+    <div class="ca-num-circle">${n}</div>
+    <div class="ca-content">
+      <div class="ca-action-side">
+        <div class="ca-side-header">
+          <span class="ca-side-label">Action details</span>
+          <span class="ca-copy-hint">Editable \u00b7 copy this text into Web IIT</span>
+        </div>
+        <textarea class="ca-details" rows="4" placeholder="Describe the specific action to be taken\u2026">${action}</textarea>
+        <button class="btn btn-primary btn-xs ca-copy-btn" onclick="copyCAAction(this)">&#128203; Copy this action</button>
+      </div>
+      <div class="ca-reason-side">
+        <div class="ca-side-header">
+          <span class="ca-side-label ca-reason-label">Reason</span>
+          <span class="ca-ref-tag">For reference only</span>
+        </div>
+        <div class="ca-reason-box">${reason}</div>
+        ${source==='AI suggested'?'<div class="ca-source-note"><span style="color:var(--purple)">&#10022; AI suggested</span></div>':'<div class="ca-source-note">Manager added</div>'}
+      </div>
+    </div>
+    <button class="ca-del-btn" onclick="this.closest('.ca-card-simple').remove();renumberCA();markDirty()" title="Remove action">&times;</button>
+  </div>`;
+}
+
+function copyCAAction(btn){
+  const card=btn.closest('.ca-card-simple');
+  const text=card.querySelector('.ca-details').value.trim();
+  if(!text){toast('Action is empty','w');return;}
+  navigator.clipboard.writeText(text).then(()=>toast('Action copied','s'));
+}
+
+function addCASimple(){
+  const list=document.getElementById('ca-list');
+  const n=list.querySelectorAll('.ca-card-simple').length+1;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=caCardSimple(n,'','Add a brief reason for this action\u2026','Manager added');
+  list.appendChild(wrap.firstElementChild);
+  updateCACount();
+  markDirty();
+}
+
+function renumberCA(){
+  document.querySelectorAll('#ca-list .ca-card-simple').forEach((card,i)=>{
+    card.dataset.num=i+1;
+    card.querySelector('.ca-num-circle').textContent=i+1;
+  });
+  updateCACount();
+}
+
+function updateCACount(){
+  const n=document.querySelectorAll('#ca-list .ca-card-simple').length;
+  const el=document.getElementById('ca-count');
+  if(el) el.textContent=n;
+}
+
+/* ── S10: AI Assistant ── */
+function s10(){return `<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="sec-title">AI investigation assistant</div><span class="tag t-ai">AI-powered</span></div>
+  <div class="sec-desc">Ask any question about this investigation. The AI responds based on the incident data and provides a confidence level.</div>
+  <div class="chat-history" id="chat-hist"></div>
+  <div style="display:flex;gap:8px;align-items:flex-end">
+    <textarea id="chat-input" rows="2" style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:8px 11px;font-size:12px;font-family:inherit;resize:none;line-height:1.5" placeholder="Ask anything about this investigation\u2026 Press Enter to send, Shift+Enter for new line." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+    <button class="btn btn-ai btn-sm" onclick="sendChat()" style="height:58px;padding:0 16px">&#10022; Ask</button>
+  </div>
+  <div style="margin-top:10px">
+    <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.4px">SUGGESTED QUESTIONS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${['Was the patient behaviour reasonably foreseeable?','What evidence is still missing?','Were the appropriate controls in place?','Is the corrective action plan sufficient?','How strong is the prior Code White as a contributing factor?','What systemic issues does this incident reveal?'].map(q=>`<button class="btn btn-ghost btn-xs" data-q="${q}" onclick="document.getElementById('chat-input').value=this.dataset.q">${q}</button>`).join('')}
+    </div>
+  </div>
+</div>`;}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const q=(input?.value||'').trim();if(!q)return;
+  input.value='';
+  chatHistory.push({role:'user',content:q});
+  renderChat();
+  const hist=document.getElementById('chat-hist');
+  if(hist){const l=document.createElement('div');l.id='chat-loading';l.className='loading';l.innerHTML=`<div class="spinner"></div><span>Thinking&hellip;</span>`;hist.appendChild(l);hist.scrollTop=hist.scrollHeight;}
+
+  const ctx=`You are a workplace violence investigation assistant embedded in an active investigation. Answer the investigator's question based ONLY on the incident data provided below.
+
+REASONING APPROACH
+- Cross-reference worker statements against the security report. Flag any contradictions or gaps.
+- Distinguish between direct evidence, reasonable inference, and speculation.
+- If the question cannot be fully answered from the available data, say so explicitly.
+- Be direct, evidence-based, and prevention-focused. Avoid blame language.
+
+RESPONSE FORMAT
+End your response with exactly these two lines (on separate lines):
+CONFIDENCE: [High/Medium/Low] \u2014 [one sentence reason]
+ASSUMPTIONS: [List any assumptions you made, or write "None" if the answer follows directly from the evidence]
+
+CONFIDENCE RUBRIC
+- High: Direct evidence in the worker statement, security report, or system data supports the answer.
+- Medium: Reasonable inference from context, but not explicitly stated.
+- Low: Significant speculation or absence of evidence.
+
+INCIDENT DATA
+Code White \u2014 Physical Assault, Ridge Meadows Hospital EHS Bay, 2026-04-12 1030hrs.
+Workers: LPN WA (97472, refresher overdue) \u2014 spat on face/eyes; RPN BK (97488, training current) \u2014 kicked in torso, twisted ankle.
+Context: Unit over capacity, short-staffed, high demand. Patient had prior Code White \u2014 no indicator applied.
+Training: Both at High plus ATR level. WA refresher overdue.
+
+Security report: ${INC.sec}
+
+WA statement: ${INC.workers[0].stmt}
+
+BK statement: ${INC.workers[1].stmt}`;
+
+  try{
+    const msgs=[{role:'user',content:ctx+'\n\nQuestion: '+chatHistory[0].content}];
+    for(let i=1;i<chatHistory.length;i++) msgs.push(chatHistory[i]);
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:AI_MODEL,max_tokens:1000,messages:msgs})});
+    const d=await r.json();
+    chatHistory.push({role:'assistant',content:d.content?.[0]?.text||'No response.'});
+  }catch(e){
+    chatHistory.push({role:'assistant',content:`Error: ${e.message}\nCONFIDENCE: Low \u2014 Could not reach AI service.`});
+  }
+  document.getElementById('chat-loading')?.remove();
+  renderChat();
+}
+
+function renderChat(){
+  const hist=document.getElementById('chat-hist');if(!hist)return;
+  hist.innerHTML=chatHistory.map(m=>{
+    if(m.role==='user') return `<div class="chat-user"><div class="chat-user-bubble">${m.content}</div></div>`;
+    const lines=m.content.split('\n');
+    const ci=lines.findIndex(l=>l.startsWith('CONFIDENCE:'));
+    const ai=lines.findIndex(l=>l.startsWith('ASSUMPTIONS:'));
+    let body=m.content,confHtml='',asmHtml='';
+    const cutIdx=ci>-1?(ai>-1?Math.min(ci,ai):ci):(ai>-1?ai:-1);
+    if(cutIdx>-1) body=lines.slice(0,cutIdx).join('\n').trim();
+    if(ci>-1){
+      const cl=lines[ci].replace('CONFIDENCE:','').trim();
+      const lv=cl.startsWith('High')?'High':cl.startsWith('Medium')?'Medium':'Low';
+      const cColor=lv==='High'?'var(--green)':lv==='Medium'?'var(--amber)':'var(--red)';
+      const cBg=lv==='High'?'var(--green-lt)':lv==='Medium'?'var(--amber-lt)':'var(--red-lt)';
+      const cBd=lv==='High'?'var(--green-mid)':lv==='Medium'?'var(--amber-mid)':'var(--red-mid)';
+      confHtml=`<div class="conf-bar"><span style="background:${cBg};color:${cColor};border:1px solid ${cBd};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;flex-shrink:0">Confidence: ${lv}</span><span style="font-size:10px;color:var(--muted);line-height:1.5">${cl.replace(/^(High|Medium|Low)\s*[\u2014\-]\s*/,'')}</span></div>`;
+    }
+    if(ai>-1){
+      const al=lines[ai].replace('ASSUMPTIONS:','').trim();
+      if(al && al.toLowerCase()!=='none'){
+        asmHtml=`<div style="margin-top:6px;padding:6px 9px;background:var(--surface);border-radius:6px;font-size:10px;color:var(--muted);line-height:1.5"><strong style="color:var(--text)">Assumptions:</strong> ${al}</div>`;
+      }
+    }
+    return `<div><div class="chat-ai-bubble"><div class="chat-label">&#10022; AI INVESTIGATION ASSISTANT \u00b7 ${AI_MODEL_LABEL.toUpperCase()}</div><div style="white-space:pre-wrap">${body}</div>${confHtml}${asmHtml}</div></div>`;
+  }).join('');
+  hist.scrollTop=hist.scrollHeight;
+}
+
+/* ── AI MODEL CONFIG ── */
+const AI_MODEL = 'claude-opus-4-7';
+const AI_MODEL_LABEL = 'Claude Opus';
+
+/* ── AI PROMPTS ── */
+const PROMPTS={
+  'seq':()=>`You are a workplace violence investigation assistant. Generate a detailed chronological sequence of events for this code white incident.
+
+REASONING APPROACH
+- Cross-reference the worker statements against the security report.
+- Flag any time discrepancies or contradictions between sources with [DISCREPANCY] markers.
+- Label purely inferred entries as [Inferred \u2014 verify].
+- Each entry should cite its source.
+
+INCIDENT DATA
+Code White, Ridge Meadows Hospital EHS Bay, 2026-04-12 1030hrs.
+Workers: WA spat on face/eyes; BK kicked in torso, twisted ankle.
+Context: Unit over capacity, short-staffed.
+
+Security report: ${INC.sec}
+WA statement: ${INC.workers[0].stmt}
+BK statement: ${INC.workers[1].stmt}
+
+OUTPUT FORMAT
+Header: AI DRAFT \u2014 MANAGER REVIEW REQUIRED
+Each line: TIME \u2014 Description (Source: Security Report | Worker Statement | Inferred)
+Include a section at the end titled "CROSS-SOURCE ANALYSIS" noting any discrepancies, gaps, or points requiring verification.`,
+
+  'factors-rationale':()=>{
+    const selected=Array.from(document.querySelectorAll('.cf-check input[type=checkbox]:checked'))
+      .map(cb=>cb.parentElement.querySelector('span').textContent.replace(/\s*\u2736\s*AI\s*$/,'').trim());
+    return `You are a workplace violence investigation assistant. The investigator has selected the following contributing factors from a standardized list for this incident. Your task is to provide a brief evidence-based rationale for each one, citing specific sources.
+
+REASONING APPROACH
+For each selected factor:
+1. Identify what specific evidence in the incident data supports this factor.
+2. Cite the source (worker statement, security report, contextual data).
+3. If the evidence is weak or speculative, say so explicitly.
+
+INCIDENT DATA
+Code White, Ridge Meadows Hospital EHS Bay, 2026-04-12 1030hrs.
+Workers: WA (refresher overdue) spat on face/eyes; BK (training current) kicked in torso, twisted ankle.
+Context: Unit over capacity, short-staffed, high demand. Patient had prior Code White with no indicator applied.
+
+Security report: ${INC.sec}
+
+WA statement: ${INC.workers[0].stmt}
+
+BK statement: ${INC.workers[1].stmt}
+
+SELECTED CONTRIBUTING FACTORS
+${selected.map((f,i)=>`${i+1}. ${f}`).join('\n')}
+
+OUTPUT FORMAT
+For each factor (use this exact format):
+
+[Number]. [Factor name]
+Rationale: [2-3 sentences citing specific evidence]
+Source: [Worker statement | Security report | Contextual data | Inferred]
+
+End with a brief OVERALL ASSESSMENT (3-4 sentences) summarizing how these factors interrelated to produce the incident.
+
+Header: AI CONTRIBUTING FACTORS RATIONALE \u2014 MANAGER REVIEW REQUIRED.`;
+  },
+
+  'factors':()=>`You are a workplace violence investigation assistant. Analyze contributing factors using best-practice causal reasoning.
+
+REASONING APPROACH
+Think step-by-step through each category. For each, ask:
+1. What evidence in the incident data relates to this category?
+2. Is it direct evidence or inferred?
+3. Is this a primary, contributing, possible, or non-factor?
+
+AVOID blame-based language. Focus on systems, processes, and conditions \u2014 not individual shortcomings.
+
+CONFIDENCE LEVELS (apply to your rating)
+- Primary: Direct causal link with clear evidence.
+- Contributing: Meaningful influence, evidence supports the link.
+- Possible: Plausible but unverified.
+- Not applicable: No evidence of relevance.
+
+INCIDENT DATA
+Code White, Ridge Meadows Hospital (2026-04-12). Key facts:
+- WA refresher overdue; BK training current
+- Patient had prior Code White with no behavioural indicator applied
+- Unit over capacity at time of incident
+- Security and staff intervened; two workers injured during restraint
+
+Security report: ${INC.sec}
+Worker statements: WA: ${INC.workers[0].stmt}  BK: ${INC.workers[1].stmt}
+
+CATEGORIES (analyze each)
+Worker/Team, Patient/Client, Communication/Handoff, Environmental/Layout, Training/Competency, Procedural/Policy, Staffing/Workload, Equipment/Alarms, Supervision/Planning.
+
+For each: rating + 2-3 sentence evidence-based analysis citing specific sources.
+Header: AI CONTRIBUTING FACTORS ANALYSIS \u2014 MANAGER REVIEW REQUIRED.`,
+
+  'ca':()=>`You are a workplace violence investigation assistant. Generate specific corrective actions for this incident.
+
+REASONING APPROACH
+For each action, think through:
+1. What contributing factor or root cause does this address?
+2. What specific change will it produce?
+3. Is the action measurable and clearly worded?
+
+Avoid generic recommendations like "improve training" \u2014 say what specifically, with what target.
+
+KEY FINDINGS
+- WA (97472) refresher training overdue
+- No behavioural indicator applied after patient's prior Code White (communication/handoff failure)
+- Unit over capacity; staffing pressure during high-demand shift
+- Two workers physically injured during restraint
+- EHS Bay physical management space and sightlines identified as concerns
+
+GENERATE 5\u20137 ACTIONS
+
+For each, output exactly two lines in this format (no extra text between actions):
+
+ACTION: [Specific actionable description]
+REASON: [One-sentence high-level reason why this action is needed]
+
+Example:
+ACTION: Apply ALERT behavioural indicator for patient J.W. immediately and ensure risk is communicated across treating teams.
+REASON: Address communication/handoff failure that led to absence of behavioural alert.
+
+Header: AI SUGGESTED CORRECTIVE ACTIONS \u2014 MANAGER TO REVIEW AND CONFIRM ALL.`,
+
+  'summary':()=>`You are a workplace violence investigation assistant. Generate a comprehensive full investigation summary structured for Web IIT transfer.
+
+REASONING APPROACH
+- Synthesize all available evidence into a coherent narrative.
+- Cross-reference worker statements against the security report; note discrepancies.
+- Distinguish confirmed facts from reasonable inferences.
+- Be trauma-informed, prevention-focused, and avoid blame.
+
+INVESTIGATION DETAILS
+Incident: INC-97472/97488 \u2014 Code White \u2014 Ridge Meadows Hospital, EHS Bay, 2026-04-12 1030hrs
+Investigator: Will Heller
+
+INJURED WORKERS
+- WA (97472): High plus ATR; refresher NOT completed; spat on face/eyes; BBF protocol; no time loss
+- BK (97488): High plus ATR; training current; kicked in torso; twisted right ankle; at work
+
+EVIDENCE
+Security report: ${INC.sec}
+WA statement: ${INC.workers[0].stmt}
+BK statement: ${INC.workers[1].stmt}
+
+CONTEXT
+Unit over capacity, short-staffed, high demand shift. Patient had prior Code White with no indicator applied.
+
+OUTPUT STRUCTURE
+Header: COMPREHENSIVE INCIDENT REVIEW \u2014 FULL INVESTIGATION SUMMARY
+Subheader: DRAFT \u2014 MANAGER REVIEW AND SIGN-OFF REQUIRED BEFORE WEB IIT TRANSFER
+
+Sections (use these exact titles):
+1. Executive Summary (3-4 sentences)
+2. Incident Description
+3. Sequence of Events
+4. Workers Affected (training status, injuries, return-to-work)
+5. Evidence Reviewed
+6. Contributing Factors (by category, with ratings)
+7. Root/Systemic Causes
+8. Corrective Actions (table format: Action | Type | Owner | Priority | Status)
+9. Outstanding Items / Follow-up Required
+10. Manager Sign-Off [Placeholder]
+
+Use professional, trauma-informed language. Label all inferences. Flag any cross-source discrepancies.`,
+
+  'evidence':()=>`You are a workplace violence investigation assistant. Analyze all available evidence for this investigation and surface contradictions, gaps, and points requiring clarification.
+
+INCIDENT
+Code White, Ridge Meadows Hospital EHS Bay, 2026-04-12 1030hrs.
+WA spat on face/eyes; BK kicked in torso, twisted ankle.
+
+EVIDENCE SOURCES
+Security report: ${INC.sec}
+WA statement: ${INC.workers[0].stmt}
+BK statement: ${INC.workers[1].stmt}
+Context: Unit over capacity, short-staffed. WA refresher overdue. Patient had prior Code White with no indicator applied.
+
+PRODUCE THREE SECTIONS
+
+1. CONTRADICTIONS OR DISCREPANCIES
+List any places where two sources tell different stories or suggest different timelines. If none, say so explicitly.
+
+2. EVIDENCE GAPS
+List what should have been captured but isn't present. What's missing that would strengthen this investigation?
+
+3. POINTS REQUIRING CLARIFICATION
+List specific questions the investigator should follow up on \u2014 with whom, and why.
+
+Be direct. Cite specific sources. If the evidence is consistent and complete, say so clearly.
+Header: AI EVIDENCE ANALYSIS \u2014 MANAGER REVIEW REQUIRED.`,
+};
+
+async function runAI(type,outId){
+  const out=document.getElementById(outId);if(!out)return;
+  out.innerHTML=`<div class="loading"><div class="spinner"></div>Generating \u2014 synthesizing all inputs\u2026</div>`;
+  const maxTokens = type==='summary' ? 2500 : type==='evidence' ? 1500 : 1600;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:AI_MODEL,max_tokens:maxTokens,messages:[{role:'user',content:PROMPTS[type]()}]})});
+    const d=await r.json();
+    const txt=d.content?.[0]?.text||'No response.';
+    out.innerHTML=`<div class="ai-box"><div class="ai-hdr">&#10022; AI draft \u2014 ${AI_MODEL_LABEL}<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="navigator.clipboard.writeText(this.closest('.ai-box').querySelector('textarea').value).then(()=>toast('Copied','s'))">Copy</button></div><textarea rows="${type==='summary'?28:14}">${txt}</textarea></div>`;
+    toast('AI draft ready \u2014 review before using','w');
+  }catch(e){out.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px 0">Error: ${e.message}</div>`;}
+}
+
+/* ── MODALS ── */
+function showComplete(){document.getElementById('complete-modal').classList.add('show');}
+function confirmComplete(){document.getElementById('complete-modal').classList.remove('show');toast('Investigation complete \u2014 export ready for Web IIT','s');setTimeout(()=>showView('dash'),700);}
+
+/* ── TOAST ── */
+function toast(msg,type='i'){
+  const d=document.createElement('div');d.className=`toast t-${type}`;d.textContent=msg;
+  document.getElementById('toasts').appendChild(d);setTimeout(()=>d.remove(),3200);
+}
+
+/* ── INIT ── */
+showView('dash');
+</script>
+</body>
+</html>
